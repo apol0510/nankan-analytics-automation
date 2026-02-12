@@ -1,0 +1,23 @@
+{
+  "name": "nankan-analytics-automation",
+  "version": "1.0.0",
+  "description": "nankan-analytics完全自動化システム",
+  "type": "module",
+  "scripts": {
+    "fetch": "node scripts/fetch-from-keiba-data-shared.js",
+    "generate:prediction": "node scripts/generate-prediction.js",
+    "generate:dark-horse": "node scripts/generate-dark-horse.js",
+    "generate:results": "node scripts/generate-results.js",
+    "deploy": "node scripts/auto-deploy.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "keiba",
+    "automation",
+    "nankan-analytics"
+  ],
+  "author": "Toshihiro Asai",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
