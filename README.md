@@ -24,9 +24,7 @@ nankan-analytics用データ（JSON）
    - 自動生成・デプロイ
 
 2. **穴馬更新（darkHorseData.json）**
-   - keiba-data-sharedから予想データ取得
-   - 穴馬抽出ロジック適用
-   - 自動生成・デプロイ
+   - ⚠️ 手動更新のまま（前走成績データ不足のため）
 
 3. **結果更新（archiveResults.json）**
    - keiba-data-sharedから結果データ取得
@@ -57,11 +55,31 @@ nankan-analytics-automation/
 
 ## 🛠️ 開発状況
 
-- [ ] Phase 1: keiba-data-sharedからのデータ取得
-- [ ] Phase 2: 調整ロジック実装
-- [ ] Phase 3: 自動生成スクリプト
-- [ ] Phase 4: 自動デプロイ
+- [x] Phase 1: keiba-data-sharedからのデータ取得 ✅
+- [x] Phase 2: 予想生成スクリプト ✅
+- [x] Phase 3: 結果判定・アーカイブ生成スクリプト ✅
+- [ ] Phase 4: 自動デプロイスクリプト
 - [ ] Phase 5: GitHub Actions統合
+
+## 📝 使い方
+
+### 予想データ生成
+```bash
+npm run generate:prediction
+```
+出力: `output/allRacesPrediction-YYYY-MM-DD.json`
+
+### 結果データ生成
+```bash
+npm run generate:results
+```
+出力: `output/archiveResults-YYYY-MM-DD.json`
+
+## ⚙️ 設定
+
+各スクリプトのファイル内で日付を設定してください：
+- `scripts/generate-prediction.js` - Line 145: `const testDate`
+- `scripts/generate-results.js` - Line 172: `const testDate`
 
 ---
 
