@@ -102,14 +102,14 @@ function fetchResultData(date) {
  * 的中条件: 軸馬が1着 AND ヒモ馬が2着
  */
 function checkUmatanHit(prediction, result) {
-  // 軸馬候補を取得（本命・対抗・単穴・連下最上位・連下）
+  // 軸馬候補を取得（本命・対抗・単穴）
   const jikuHorses = prediction.horses.filter(h =>
-    ['本命', '対抗', '単穴', '連下最上位', '連下'].includes(h.assignment)
+    ['本命', '対抗', '単穴'].includes(h.assignment)
   );
 
-  // ヒモ馬候補を取得（本命・対抗・単穴・連下最上位・連下）
+  // ヒモ馬候補を取得（対抗・単穴・連下最上位・連下・補欠）
   const himoHorses = prediction.horses.filter(h =>
-    ['本命', '対抗', '単穴', '連下最上位', '連下'].includes(h.assignment)
+    ['対抗', '単穴', '連下最上位', '連下', '補欠'].includes(h.assignment)
   );
 
   if (jikuHorses.length === 0 || himoHorses.length === 0) {
@@ -130,8 +130,12 @@ function checkUmatanHit(prediction, result) {
   // ヒモ馬番号リスト
   const himoNumbers = himoHorses.map(h => h.number);
 
-  // 的中判定: 軸馬が1着 AND ヒモ馬が2着
-  const isHit = jikuNumbers.includes(first.number) && himoNumbers.includes(second.number);
+  // 的中判定:
+  // パターン1: 軸馬が1着 AND ヒモ馬が2着
+  // パターン2: ヒモ馬が1着 AND 軸馬が2着（逆向き）
+  const pattern1 = jikuNumbers.includes(first.number) && himoNumbers.includes(second.number);
+  const pattern2 = himoNumbers.includes(first.number) && jikuNumbers.includes(second.number);
+  const isHit = pattern1 || pattern2;
 
   if (!isHit) {
     return { hit: false, payout: 0 };
