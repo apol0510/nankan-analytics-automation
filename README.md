@@ -35,14 +35,27 @@ nankan-analytics用データ（JSON）
 
 ```
 nankan-analytics-automation/
+├── .github/
+│   └── workflows/
+│       └── auto-deploy-results.yml       # GitHub Actions自動デプロイ
 ├── scripts/
 │   ├── fetch-from-keiba-data-shared.js  # データ取得
 │   ├── generate-prediction.js            # 予想生成
-│   ├── generate-dark-horse.js            # 穴馬生成
 │   ├── generate-results.js               # 結果生成
 │   └── auto-deploy.js                    # 自動デプロイ
+├── site/                                 # Netlify管理サイト
+│   ├── netlify/
+│   │   └── functions/
+│   │       ├── generate-results.mjs      # 結果生成API
+│   │       └── auto-deploy.mjs           # 自動デプロイAPI
+│   ├── src/
+│   │   └── pages/
+│   │       └── index.astro               # 管理ダッシュボード
+│   ├── netlify.toml                      # Netlify設定
+│   └── package.json
 ├── test-data/                            # テスト用データ
 ├── output/                               # 生成結果確認用
+├── netlify.toml                          # ルートNetlify設定
 └── README.md
 ```
 
@@ -139,14 +152,134 @@ npm run deploy prediction
 **監視:**
 - https://github.com/apol0510/nankan-analytics-automation/actions
 
-## ⚙️ 設定
+## ⚙️ セットアップ
 
-各スクリプトのファイル内で日付を設定してください：
-- `scripts/generate-prediction.js` - Line 145: `const testDate`
-- `scripts/generate-results.js` - Line 232: `const testDate`
+### 1. Netlifyサイト作成
+
+1. https://app.netlify.com にアクセス
+2. 「Add new site」→「Import an existing project」
+3. GitHub → `nankan-analytics-automation` を選択
+4. **Site name**: `nankan-analytics-automation`
+5. **Base directory**: `site` （自動検出）
+6. **Build command**: `npm run build` （自動検出）
+7. **Publish directory**: `dist` （自動検出）
+8. 「Deploy site」をクリック
+
+### 2. 環境変数設定（重要）
+
+Netlifyダッシュボード → Site settings → Environment variables
+
+```
+GITHUB_TOKEN = ghp_xxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+**GITHUB_TOKEN作成:**
+1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Generate new token (classic)
+3. Scopes: `repo` (full control)
+4. Copy token → Netlifyに貼り付け
+
+### 3. GitHub Actions有効化
+
+GitHub リポジトリ → Settings → Actions → General
+- Actions permissions: **Allow all actions and reusable workflows**
+
+### 4. GitHub Actions Secrets設定
+
+GitHub リポジトリ → Settings → Secrets and variables → Actions → New repository secret
+
+```
+Name: GITHUB_TOKEN
+Secret: (GitHub Personal Access Token)
+```
+
+**注意**: `GITHUB_TOKEN`はNetlifyとGitHub両方に設定必要
+
+---
+
+## 🔧 技術スタック
+
+- **フロントエンド**: Astro (SSG)
+- **バックエンド**: Netlify Functions (Node.js)
+- **CI/CD**: GitHub Actions
+- **ホスティング**: Netlify
+- **データソース**: keiba-data-shared (GitHub)
+- **デプロイ先**: nankan-analytics (GitHub → Netlify)
+
+---
+
+## 🎯 運用フロー
+
+### パターンA: 管理ダッシュボード（手動実行）
+```
+https://nankan-analytics-automation.netlify.app
+  ↓ 「結果生成実行」ボタンクリック
+的中判定完了（7/12R, 33,720円など）
+  ↓ 「自動デプロイ実行」ボタンクリック
+nankan-analyticsへプッシュ
+  ↓
+Netlify自動ビルド
+```
+
+### パターンB: GitHub Actions（完全自動）
+```
+毎日23:00 JST
+  ↓ 自動実行
+keiba-data-shared取得
+  ↓
+結果生成・的中判定
+  ↓
+nankan-analyticsへ自動プッシュ
+  ↓
+Netlify自動ビルド
+```
+
+---
+
+## 🚨 トラブルシューティング
+
+### Netlify Functions エラー
+- Netlify Functions タブでログ確認
+- `GITHUB_TOKEN` 環境変数が設定されているか確認
+
+### GitHub Actions 失敗
+- Actions タブでログ確認
+- `GITHUB_TOKEN` Secretが設定されているか確認
+- keiba-data-sharedに該当日のデータが存在するか確認
+
+### デプロイ失敗
+- nankan-analyticsリポジトリへのアクセス権限確認
+- `GITHUB_TOKEN`のスコープに`repo`が含まれているか確認
+
+---
+
+## 📊 的中判定ロジック
+
+### 馬単（Umatan）軸流し方式
+
+**軸馬（Jiku）**: 本命・対抗・単穴
+**ヒモ馬（Himo）**: 対抗・単穴・連下最上位・連下・補欠
+
+**的中条件（双方向）:**
+- パターン1: 軸馬が1着 AND ヒモ馬が2着
+- パターン2: ヒモ馬が1着 AND 軸馬が2着
+
+**実績:**
+- 2026-02-12: 7/12R的中, 33,720円, 回収率234% ✅
+
+---
+
+## 📝 開発履歴
+
+- **2026-02-12**: Phase 1-4完成（スクリプト基盤）
+- **2026-02-13**: Phase 5-6完成（Netlify管理サイト + GitHub Actions）
 
 ---
 
 **作成日**: 2026-02-12
+**最終更新**: 2026-02-13
 **作成者**: Claude Code（クロちゃん）
 **協力者**: マコさん
+
+**リポジトリ**: https://github.com/apol0510/nankan-analytics-automation
+**管理サイト**: https://nankan-analytics-automation.netlify.app （セットアップ後）
