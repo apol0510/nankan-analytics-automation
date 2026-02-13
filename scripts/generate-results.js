@@ -20,6 +20,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const KEIBA_DATA_SHARED_PATH = '/Users/apolon/Projects/keiba-data-shared';
+const TEST_DATA_DIR = path.join(__dirname, '../test-data');
 const OUTPUT_DIR = path.join(__dirname, '../output');
 
 if (!fs.existsSync(OUTPUT_DIR)) {
@@ -41,6 +42,13 @@ function getTodayDate() {
  * 指定日付の予想データを取得
  */
 function fetchPredictionData(date) {
+  // まずtest-dataディレクトリをチェック
+  const testFilePath = path.join(TEST_DATA_DIR, `prediction-${date}.json`);
+  if (fs.existsSync(testFilePath)) {
+    return JSON.parse(fs.readFileSync(testFilePath, 'utf-8'));
+  }
+
+  // keiba-data-sharedから取得
   const [year, month] = date.split('-');
   const filePath = path.join(
     KEIBA_DATA_SHARED_PATH,
@@ -61,6 +69,13 @@ function fetchPredictionData(date) {
  * 指定日付の結果データを取得
  */
 function fetchResultData(date) {
+  // まずtest-dataディレクトリをチェック
+  const testFilePath = path.join(TEST_DATA_DIR, `result-${date}.json`);
+  if (fs.existsSync(testFilePath)) {
+    return JSON.parse(fs.readFileSync(testFilePath, 'utf-8'));
+  }
+
+  // keiba-data-sharedから取得
   const [year, month] = date.split('-');
   const filePath = path.join(
     KEIBA_DATA_SHARED_PATH,
@@ -78,14 +93,26 @@ function fetchResultData(date) {
 }
 
 /**
- * 馬単の的中判定と配当取得
+ * 馬単軸流しの的中判定と配当取得
+ *
+ * 買い目パターン（assignmentベース）:
+ * - 軸馬: 本命、対抗、単穴
+ * - ヒモ馬: 対抗、単穴、連下最上位、連下
+ *
+ * 的中条件: 軸馬が1着 AND ヒモ馬が2着
  */
 function checkUmatanHit(prediction, result) {
-  // 本命（◎）と対抗（○）を取得
-  const honmei = prediction.horses.find(h => h.assignment === '本命');
-  const taikou = prediction.horses.find(h => h.assignment === '対抗');
+  // 軸馬候補を取得（本命・対抗・単穴・連下最上位・連下）
+  const jikuHorses = prediction.horses.filter(h =>
+    ['本命', '対抗', '単穴', '連下最上位', '連下'].includes(h.assignment)
+  );
 
-  if (!honmei || !taikou) {
+  // ヒモ馬候補を取得（本命・対抗・単穴・連下最上位・連下）
+  const himoHorses = prediction.horses.filter(h =>
+    ['本命', '対抗', '単穴', '連下最上位', '連下'].includes(h.assignment)
+  );
+
+  if (jikuHorses.length === 0 || himoHorses.length === 0) {
     return { hit: false, payout: 0 };
   }
 
@@ -97,8 +124,14 @@ function checkUmatanHit(prediction, result) {
     return { hit: false, payout: 0 };
   }
 
-  // 馬単の的中判定: 本命が1着 AND 対抗が2着
-  const isHit = (first.number === honmei.number && second.number === taikou.number);
+  // 軸馬番号リスト
+  const jikuNumbers = jikuHorses.map(h => h.number);
+
+  // ヒモ馬番号リスト
+  const himoNumbers = himoHorses.map(h => h.number);
+
+  // 的中判定: 軸馬が1着 AND ヒモ馬が2着
+  const isHit = jikuNumbers.includes(first.number) && himoNumbers.includes(second.number);
 
   if (!isHit) {
     return { hit: false, payout: 0 };
@@ -191,8 +224,8 @@ function convertToArchiveFormat(predictionData, resultData, targetDate) {
 function main() {
   console.log('🚀 結果判定・アーカイブ生成開始...\n');
 
-  // テストデータで実行（2026-02-09）
-  const testDate = '2026-02-09';
+  // テストデータで実行（2026-02-12）
+  const testDate = '2026-02-12';
   console.log(`📅 対象日: ${testDate}\n`);
 
   try {
@@ -211,7 +244,8 @@ function main() {
     const archiveData = convertToArchiveFormat(predictionData, resultData, testDate);
     console.log(`✅ 結果判定完了`);
 
-    const dayData = archiveData['2026']['02']['09'];
+    const [year, month, day] = testDate.split('-');
+    const dayData = archiveData[year][month][day];
     console.log(`   的中レース: ${dayData.hitRaces}/${dayData.totalRaces}R`);
     console.log(`   総配当: ${dayData.totalPayout}円`);
     console.log(`   回収率: ${dayData.recoveryRate}%`);
