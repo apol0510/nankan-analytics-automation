@@ -58,28 +58,92 @@ nankan-analytics-automation/
 - [x] Phase 1: keiba-data-sharedからのデータ取得 ✅
 - [x] Phase 2: 予想生成スクリプト ✅
 - [x] Phase 3: 結果判定・アーカイブ生成スクリプト ✅
-- [ ] Phase 4: 自動デプロイスクリプト
-- [ ] Phase 5: GitHub Actions統合
+- [x] Phase 4: 自動デプロイスクリプト ✅
+- [x] Phase 5: GitHub Actions統合（完全自動化） ✅
+- [x] Phase 6: Netlifyサイト構築（管理ダッシュボード） ✅
 
 ## 📝 使い方
 
-### 予想データ生成
+### 🌐 管理ダッシュボード（推奨）
+
+**Netlify管理サイト**: https://nankan-analytics-automation.netlify.app
+
+**機能:**
+- ✅ ワンクリックで結果生成・的中判定
+- ✅ ワンクリックで自動デプロイ
+- ✅ リアルタイムログ表示
+- ✅ デプロイ状況確認
+
+**使い方:**
+1. 管理ダッシュボードにアクセス
+2. 「結果生成実行」ボタンをクリック
+3. 的中判定結果を確認
+4. 「自動デプロイ実行」ボタンをクリック
+5. Netlify自動ビルド開始 ✅
+
+---
+
+### 💻 ローカル実行（開発者向け）
+
+#### 1. 予想データ生成
 ```bash
 npm run generate:prediction
 ```
 出力: `output/allRacesPrediction-YYYY-MM-DD.json`
 
-### 結果データ生成
+#### 2. 結果データ生成
 ```bash
 npm run generate:results
 ```
 出力: `output/archiveResults-YYYY-MM-DD.json`
 
+#### 3. 自動デプロイ
+```bash
+# 予想データデプロイ
+npm run deploy prediction [YYYY-MM-DD]
+
+# 結果データデプロイ
+npm run deploy results [YYYY-MM-DD]
+```
+
+**例:**
+```bash
+# 2026-02-12の結果をデプロイ
+npm run deploy results 2026-02-12
+
+# 今日の予想をデプロイ（日付省略）
+npm run deploy prediction
+```
+
+**実行内容:**
+- nankan-analytics/astro-site/src/data/ にコピー
+- nankan-analytics/astro-site/public/data/ にコピー
+- Git add, commit, push
+- Netlify自動ビルド開始
+
+---
+
+### ⚙️ GitHub Actions（完全自動）
+
+**スケジュール**: 毎日 23:00 JST（14:00 UTC）
+
+**実行内容:**
+1. keiba-data-shared から結果データ取得
+2. 的中判定・アーカイブ生成
+3. nankan-analytics へ自動デプロイ
+4. Netlify自動ビルド
+
+**手動実行:**
+- GitHub Actions → "Auto Deploy Results" → "Run workflow"
+
+**監視:**
+- https://github.com/apol0510/nankan-analytics-automation/actions
+
 ## ⚙️ 設定
 
 各スクリプトのファイル内で日付を設定してください：
 - `scripts/generate-prediction.js` - Line 145: `const testDate`
-- `scripts/generate-results.js` - Line 172: `const testDate`
+- `scripts/generate-results.js` - Line 232: `const testDate`
 
 ---
 
